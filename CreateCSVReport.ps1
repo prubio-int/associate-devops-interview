@@ -23,7 +23,7 @@ $UsersListOfAccounts = az account list --query [].name
 $UsersListOfIDs = az account list --query [].id
 
 
-cls
+Clear-Host
 Write-Host "Welcome.  This script will generate a CSV report for all Azure Virtual Machines."
 
 
