@@ -18,7 +18,7 @@ az login
 
 
 
-# Populate list of account names/subscription ids
+# Populate list of account names/subscription ids according to users login account
 $UsersListOfAccounts = az account list --query [].name
 $UsersListOfIDs = az account list --query [].id
 
@@ -32,22 +32,29 @@ Write-Host "Welcome.  This script will generate a CSV report for all Azure Virtu
 $done = $false
 do {
     
-    $AccountName = Read-Host "Please enter account name or ID"
+    $AccountName = Read-Host "Please enter Subscription name or Subscription ID"
 
-    # Check if input is valid in list of IDs
+    # Confirm if input is a valid ID by checking if it exists in the list of IDs
     foreach ($id in $UsersListOfIDs) {
-        if ($id.Contains($AccountName)) {
+        if ($id.Trim() -replace '"', "" -replace ',', "" -eq $AccountName) {
             $done = $true
+            # Set the account with Subscription ID
+            az account set -s $AccountName
             break
+            # break out of loop if we found a match and skip the below loop
         }
     }
+
+    # Proceed to below loop to check if user entered a Subscription name
 
     if (!$done) {
 
         # Check if input is valid in list of accounts
         foreach ($acc in $UsersListOfAccounts) {
-            if ($acc.Contains($AccountName)) {
+            if ($acc.Trim() -replace '"', "" -replace ',', "" -eq $AccountName) {
                 $done = $true
+                # Set the account with Subscription name
+                az account set --name $AccountName
                 break
             }
         }
@@ -59,13 +66,15 @@ do {
 } while (!$done)
 
 
-$DesktopPath = [Environment]::GetFolderPath("Desktop")
-$ReportName = "\\CSV_Report_Azure_VMs_" + (Get-Date -Format "yyyyMMdd") + "_" + (Get-Date).Hour + (Get-Date).Minute + (Get-Date).Second + ".csv"
 
-$report = az vm list --show-details -d --query "[].{ID:id,Name:name,Size:hardwareProfile.vmSize,OperatingSystem:osType,PowerState:powerState,PrivateIP:privateIps,PublicIP:publicIps,Tags:tags}" --output json | ConvertFrom-Json
-#$report | Export-Csv -Path C:\Users\p-r\Desktop\test.csv -NoTypeInformation
+# Specify user's desktop as the save file location
+$DesktopPath = [Environment]::GetFolderPath("Desktop") + "\CSV_Report_Azure_VMs_" + (Get-Date -Format "yyyyMMdd") + "_" + (Get-Date).Hour + (Get-Date).Minute + (Get-Date).Second + ".csv"
 
-$report | Export-Csv -Path $DesktopPath + $ReportName -NoTypeInformation
 
-Write-Host "Report " + $ReportName + " has been generated and saved onto your Desktop."
+$report = az vm list --show-details -d --query "[].{ID:id,Name:name,Size:hardwareProfile.vmSize,OperatingSystem:storageProfile.osDisk.osType,PowerState:powerState,PrivateIP:privateIps,PublicIP:publicIps,Tags:tags}" --output json | ConvertFrom-Json
+
+
+$report | Export-Csv -Path $DesktopPath -NoTypeInformation
+
+Write-Host "A file named --> "  $ReportName  "<-- has been generated and saved onto your Desktop."
 
