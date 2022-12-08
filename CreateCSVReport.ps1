@@ -76,5 +76,5 @@ $report = az vm list --show-details -d --query "[].{ID:id,Name:name,Size:hardwar
 
 $report | Export-Csv -Path $DesktopPath -NoTypeInformation
 
-Write-Host "The CSV file has been generated and saved onto your Desktop."
+Read-Host "The CSV file has been generated and saved onto your Desktop.\nPress ENTER to quit..."
 
